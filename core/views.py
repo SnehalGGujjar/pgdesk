@@ -289,7 +289,10 @@ def public_complaint(request, slug):
             text=text,
             category=result.get("category", "other"),
             urgency=result.get("urgency", 1),
+            original_language=result.get("original_language", "unknown"),
+            english_translation=result.get("english_translation", text),
             suggested_reply=result.get("suggested_reply", ""),
+            reply_in_tenant_language=result.get("reply_in_tenant_language", ""),
         )
         return render(request, "core/complaint_success.html", {"prop": prop})
 

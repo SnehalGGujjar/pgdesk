@@ -15,17 +15,29 @@ logger = logging.getLogger(__name__)
 # ─── Keyword-based fallback ──────────────────────────────────
 
 _CATEGORY_KEYWORDS = {
-    "plumbing": ["water", "geyser", "leak", "tap", "pipe", "drain", "bathroom", "toilet", "flush"],
-    "electrical": ["light", "fan", "switch", "power", "bulb", "socket", "mcb", "inverter", "wiring"],
-    "wifi": ["wifi", "internet", "router", "network", "wi-fi"],
-    "food": ["food", "mess", "kitchen", "cook", "meal", "breakfast", "dinner", "lunch"],
-    "cleanliness": ["clean", "dirty", "cockroach", "pest", "garbage", "dustbin", "sweep", "mop", "hygiene"],
-    "noise": ["noise", "loud", "music", "party", "disturb"],
-    "safety": ["fire", "smoke", "theft", "lock", "break", "cctv", "guard", "security"],
+    "plumbing": [
+        "water", "geyser", "leak", "tap", "pipe", "drain", "bathroom", "toilet", "flush",
+        "paani", "pani", "neeru", "nal", "पानी", "नल", "गीज़र", "बाथरूम",
+    ],
+    "electrical": [
+        "light", "fan", "switch", "power", "bulb", "socket", "mcb", "inverter", "wiring",
+        "bijli", "current", "currentu", "batti", "spark", "बिजली", "पंखा", "स्विच",
+    ],
+    "wifi": ["wifi", "internet", "router", "network", "wi-fi", "net", "वाईफाई"],
+    "food": ["food", "mess", "kitchen", "cook", "meal", "breakfast", "dinner", "lunch", "khana", "oota", "खाना"],
+    "cleanliness": [
+        "clean", "dirty", "cockroach", "pest", "garbage", "dustbin", "sweep", "mop", "hygiene",
+        "safai", "kachra", "ganda", "साफ़", "गंदा", "कचरा",
+    ],
+    "noise": ["noise", "loud", "music", "party", "disturb", "aawaz", "shor", "galata", "आवाज़", "शोर"],
+    "safety": ["fire", "smoke", "theft", "lock", "break", "cctv", "guard", "security", "chori", "aag", "धुआं", "आग", "चोरी"],
 }
 
-_URGENCY3_WORDS = ["fire", "shock", "smoke", "no water", "no power", "gas leak", "theft", "short circuit", "flooding"]
-_URGENCY2_WORDS = ["not working", "broken", "leaking", "stuck", "slow", "noisy"]
+_URGENCY3_WORDS = [
+    "fire", "shock", "smoke", "no water", "no power", "gas leak", "theft", "short circuit", "flooding",
+    "aag", "spark", "currentu", "current illa", "paani nahi", "aag lagi", "धुआं", "आग", "करंट",
+]
+_URGENCY2_WORDS = ["not working", "broken", "leaking", "stuck", "slow", "noisy", "kharab", "ganda", "काम नहीं", "खराब"]
 
 
 def _fallback_triage(text, room):
@@ -50,7 +62,26 @@ def _fallback_triage(text, room):
         f"Thank you for reporting this. We've noted the {category} issue in Room {room} "
         f"and will send someone to look into it shortly."
     )
-    return {"category": category, "urgency": urgency, "suggested_reply": reply}
+    
+    # Language detection in fallback
+    orig_lang = "unknown"
+    if any('\u0900' <= char <= '\u097F' for char in text):
+        orig_lang = "Hindi"
+    elif any('\u0C80' <= char <= '\u0CFF' for char in text):
+        orig_lang = "Kannada"
+    elif any('\u0B80' <= char <= '\u0BFF' for char in text):
+        orig_lang = "Tamil"
+    elif any('\u0C00' <= char <= '\u0C7F' for char in text):
+        orig_lang = "Telugu"
+
+    return {
+        "category": category,
+        "urgency": urgency,
+        "suggested_reply": reply,
+        "original_language": orig_lang,
+        "english_translation": text,
+        "reply_in_tenant_language": reply,
+    }
 
 
 # ─── Main triage function ────────────────────────────────────
@@ -58,7 +89,14 @@ def _fallback_triage(text, room):
 def triage_complaint(text: str, room: str) -> dict:
     """
     Triage a complaint using the Gemini LLM with keyword fallback.
-    Returns: {"category": str, "urgency": int, "suggested_reply": str}
+    Returns: {
+        "category": str,
+        "urgency": int,
+        "suggested_reply": str,
+        "original_language": str,
+        "english_translation": str,
+        "reply_in_tenant_language": str,
+    }
     """
     api_key = os.environ.get("GEMINI_API_KEY", "")
     if not api_key:
@@ -71,11 +109,16 @@ def triage_complaint(text: str, room: str) -> dict:
         client = genai.Client(api_key=api_key)
 
         prompt = (
-            "You triage complaints for a PG/hostel owner in India. "
+            "You triage complaints for a PG/hostel owner in India. The complaint may be in English, Hindi, Hinglish, Kannada, Tamil, Telugu, etc. "
             "Return ONLY valid JSON, no markdown:\n"
-            '{"category": "plumbing|electrical|food|cleanliness|wifi|noise|safety|other", '
-            '"urgency": 1-3 (3 = safety risk, no water, no power; 2 = affects daily life; 1 = minor), '
-            '"suggested_reply": "1-2 polite sentences written as the owner, with a concrete next step"}\n'
+            "{\n"
+            '  "category": "plumbing|electrical|food|cleanliness|wifi|noise|safety|other",\n'
+            '  "urgency": 1-3 (3 = safety risk, no water, no power; 2 = affects daily life; 1 = minor),\n'
+            '  "original_language": "English|Hindi|Kannada|Tamil|Telugu|Hinglish|etc.",\n'
+            '  "english_translation": "English translation of complaint (or same as text if already in English)",\n'
+            '  "suggested_reply": "1-2 polite sentences in English written as the owner, with a concrete next step",\n'
+            '  "reply_in_tenant_language": "Polite reply written in the tenant\'s language or dialect (e.g. Hindi, Hinglish, Kannada) or English if complaint was English"\n'
+            "}\n"
             f"Complaint from room {room}: {text}"
         )
 
@@ -84,7 +127,7 @@ def triage_complaint(text: str, room: str) -> dict:
             contents=prompt,
             config=genai.types.GenerateContentConfig(
                 temperature=0.3,
-                max_output_tokens=300,
+                max_output_tokens=400,
             ),
         )
 
@@ -105,11 +148,23 @@ def triage_complaint(text: str, room: str) -> dict:
         urgency = int(data.get("urgency", 1))
         urgency = max(1, min(3, urgency))  # clamp 1-3
 
+        orig_lang = data.get("original_language", "unknown")
+        eng_trans = data.get("english_translation", text) or text
+
         reply = data.get("suggested_reply", "")
         if not reply:
             reply = f"Thank you for your complaint about Room {room}. We'll look into it."
 
-        return {"category": category, "urgency": urgency, "suggested_reply": reply}
+        tenant_reply = data.get("reply_in_tenant_language", reply) or reply
+
+        return {
+            "category": category,
+            "urgency": urgency,
+            "suggested_reply": reply,
+            "original_language": orig_lang,
+            "english_translation": eng_trans,
+            "reply_in_tenant_language": tenant_reply,
+        }
 
     except Exception as exc:
         logger.warning("LLM triage failed (%s), using keyword fallback.", exc)

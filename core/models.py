@@ -99,7 +99,10 @@ class Complaint(models.Model):
     text = models.TextField()
     category = models.CharField(max_length=30, blank=True, default="other")
     urgency = models.IntegerField(default=1, help_text="1=Low, 2=Normal, 3=Urgent")
+    original_language = models.CharField(max_length=40, blank=True, default="unknown")
+    english_translation = models.TextField(blank=True, default="")
     suggested_reply = models.TextField(blank=True, default="")
+    reply_in_tenant_language = models.TextField(blank=True, default="")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="open")
     created_at = models.DateTimeField(auto_now_add=True)
 
