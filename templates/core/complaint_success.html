@@ -1,0 +1,18 @@
+{% extends "core/base.html" %}
+{% block title %}Complaint Received — {{ prop.name }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center px-4 py-8">
+    <div class="w-full max-w-md text-center">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-6">
+            <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Complaint Received!</h1>
+        <p class="text-gray-500 mb-6">The owner of <strong>{{ prop.name }}</strong> has been notified and will address your issue shortly.</p>
+        <a href="{% url 'public_complaint' prop.slug %}"
+            class="inline-flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
+            Submit another complaint
+        </a>
+    </div>
+</div>
+{% endblock %}

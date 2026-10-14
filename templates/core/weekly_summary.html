@@ -1,0 +1,29 @@
+{% extends "core/base.html" %}
+{% block title %}Weekly Summary — PGDesk{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Weekly Summary</h1>
+        <p class="text-sm text-gray-500">{{ prop.name }} · AI-powered overview</p>
+    </div>
+
+    <form method="post" class="mb-6">
+        {% csrf_token %}
+        <button type="submit" class="bg-indigo-600 text-white font-semibold px-6 py-2.5 rounded-xl hover:bg-indigo-700 transition-colors shadow-sm">
+            ✨ Generate Summary
+        </button>
+    </form>
+
+    {% if summary %}
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div class="prose prose-sm max-w-none text-gray-700 whitespace-pre-line">{{ summary }}</div>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center">
+        <div class="text-4xl mb-3">📊</div>
+        <p class="text-gray-500 font-medium">Click "Generate Summary" to get your AI-powered weekly overview.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

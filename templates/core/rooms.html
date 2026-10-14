@@ -1,0 +1,148 @@
+{% extends "core/base.html" %}
+{% block title %}Rooms & Tenants — PGDesk{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Rooms & Tenants</h1>
+            <p class="text-sm text-gray-500">{{ prop.name }} · {{ prop.city }}</p>
+        </div>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-6">
+        <!-- Left: Forms -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Add Room -->
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Add Room</h2>
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_room">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
+                        <input type="text" name="number" required placeholder="e.g. 101"
+                            class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Floor</label>
+                            <input type="number" name="floor" value="1" min="0"
+                                class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Beds</label>
+                            <input type="number" name="beds" value="2" min="1"
+                                class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Rent per bed (₹)</label>
+                        <input type="number" name="rent_per_bed" value="7000" min="0"
+                            class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white font-semibold py-2.5 rounded-xl hover:bg-indigo-700 transition-colors shadow-sm">
+                        Add Room
+                    </button>
+                </form>
+            </div>
+
+            <!-- Add Tenant -->
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Add Tenant</h2>
+                {% if rooms_list %}
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_tenant">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Room</label>
+                        <select name="room_id" required
+                            class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                            {% for room in rooms_list %}
+                            <option value="{{ room.id }}">Room {{ room.number }} (Floor {{ room.floor }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                        <input type="text" name="name" required placeholder="Tenant name"
+                            class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                        <input type="tel" name="phone" required placeholder="9876543210"
+                            class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Rent (₹/month)</label>
+                            <input type="number" name="rent_amount" value="7000" min="0"
+                                class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Due Day</label>
+                            <input type="number" name="due_day" value="5" min="1" max="28"
+                                class="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white font-semibold py-2.5 rounded-xl hover:bg-indigo-700 transition-colors shadow-sm">
+                        Add Tenant
+                    </button>
+                </form>
+                {% else %}
+                <div class="text-center py-6">
+                    <p class="text-gray-400 text-sm">Add a room first to add tenants.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right: Room list -->
+        <div class="lg:col-span-2">
+            {% if rooms_list %}
+            <div class="space-y-4">
+                {% for room in rooms_list %}
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 card-hover">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Room {{ room.number }}</h3>
+                            <p class="text-xs text-gray-400">Floor {{ room.floor }} · {{ room.beds }} bed{{ room.beds|pluralize }} · ₹{{ room.rent_per_bed|floatformat:"0" }}/bed</p>
+                        </div>
+                        <span class="text-xs font-medium px-2.5 py-1 rounded-full
+                            {% with active_count=room.tenants.all|length %}
+                            {% if active_count >= room.beds %}bg-green-50 text-green-700{% elif active_count > 0 %}bg-amber-50 text-amber-700{% else %}bg-gray-100 text-gray-500{% endif %}
+                            {% endwith %}">
+                            {{ room.tenants.all|length }}/{{ room.beds }} occupied
+                        </span>
+                    </div>
+                    {% for tenant in room.tenants.all %}
+                    {% if tenant.is_active %}
+                    <div class="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 mb-1.5">
+                        <div>
+                            <span class="text-sm font-medium text-gray-900">{{ tenant.name }}</span>
+                            <span class="text-xs text-gray-400 ml-2">{{ tenant.phone }}</span>
+                        </div>
+                        <form method="post" action="{% url 'deactivate_tenant' tenant.id %}" class="inline"
+                            onsubmit="return confirm('Deactivate {{ tenant.name }}?')">
+                            {% csrf_token %}
+                            <button type="submit" class="text-xs text-red-500 hover:text-red-700 font-medium">Remove</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                    {% empty %}
+                    <p class="text-xs text-gray-400 italic">No tenants yet</p>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center">
+                <div class="text-4xl mb-3">🚪</div>
+                <p class="text-gray-500 font-medium">No rooms yet</p>
+                <p class="text-sm text-gray-400 mt-1">Add your first room using the form.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
